@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Audit & Compliance</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #333; /* Dark background */
+            color: #ddd; /* Light text */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start; /* Align items at the top */
+            height: 100vh;
+            overflow: auto; /* Ensure scrolling if content overflows */
+        }
+        h1 {
+            background-color: #555; /* Darker header */
+            color: #ddd;
+            padding: 20px;
+            width: 100%;
+            text-align: center;
+            margin: 0;
+        }
+        form, #reportContainer {
+            background-color: #444; /* Dark form and container */
+            border: 1px solid #666;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin: 20px;
+            width: calc(100% - 40px); /* Full width minus margins */
+            max-width: none; /* Remove max-width constraint */
+            box-sizing: border-box;
+            flex: 1; /* Allow the form and report container to grow and fill available space */
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #ddd;
+            text-align: left; /* Align labels to the left */
+            width: 100%; /* Ensure labels take full width */
+        }
+        input {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #666;
+            border-radius: 5px;
+            box-sizing: border-box;
+            background-color: #555; /* Dark input background */
+            color: #ddd; /* Light text */
+        }
+        button {
+            background-color: #007BFF; /* Blue button */
+            color: white;
+            padding: 5px 10px; /* Smaller padding for smaller buttons */
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px; /* Smaller font size */
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+        }
+        h2 {
+            margin: 20px 0;
+            text-align: center;
+        }
+        pre {
+            background-color: #444; /* Dark pre background */
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            height: calc(100vh - 250px); /* Adjust height dynamically based on viewport */
+            overflow-y: scroll;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #ddd; /* Light text */
+        }
+        #transactionMessage {
+            background-color: #4CAF50; /* Green message */
+            color: white;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            width: 100%;
+            box-sizing: border-box;
+            text-align: center;
+            display: none; /* Hidden by default */
+        }
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1); /* White spinner border */
+            border-left-color: #ddd; /* Light spinner color */
+            animation: spin 1s linear infinite;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            margin-left: 10px;
+            display: none; /* Hidden by default */
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1>Audit & Compliance Dashboard</h1>
+    <form id="auditForm">
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required><br><br>
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required><br><br>
+        <label for="amount">Amount:</label>
+        <input type="number" id="amount" name="amount" required><br><br>
+        <button type="submit">Submit Transaction</button>
+        <div id="transactionMessage">Successfully saved transaction</div>
+        <div class="spinner" id="transactionSpinner"></div> <!-- Spinner for transaction -->
+    </form>
+
+    <div id="reportContainer">
+        <h2>Generate Report</h2>
+        <button id="generateReportBtn">Generate Report</button>
+        <div class="spinner" id="reportSpinner"></div> <!-- Spinner for report generation -->
+        <pre id="report"></pre>
+    </div>
+
+    <script>
+        document.getElementById('auditForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const data = {
+                date: document.getElementById('date').value,
+                description: document.getElementById('description').value,
+                amount: document.getElementById('amount').value
+            };
+
+            // Show spinner while processing transaction
+            const transactionSpinner = document.getElementById('transactionSpinner');
+            transactionSpinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch('/audit', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+                const result = await response.json();
+
+                // Update transaction message and display it
+                const transactionMessage = document.getElementById('transactionMessage');
+                transactionMessage.style.display = 'block';
+
+                // Hide spinner after processing
+                transactionSpinner.style.display = 'none';
+
+                // Optionally, clear form fields after successful submission
+                document.getElementById('date').value = '';
+                document.getElementById('description').value = '';
+                document.getElementById('amount').value = '';
+
+                // Scroll to the top to show the success message clearly
+                window.scrollTo(0, document.body.scrollHeight);
+            } catch (error) {
+                console.error('Error submitting transaction:', error);
+                alert('Error submitting transaction');
+                transactionSpinner.style.display = 'none'; // Hide spinner on error
+            }
+        });
+
+        document.getElementById('generateReportBtn').addEventListener('click', async () => {
+            const reportContainer = document.getElementById('report');
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            const reportSpinner = document.getElementById('reportSpinner');
+            generateReportBtn.innerHTML = 'Generating...';
+            generateReportBtn.disabled = true;
+
+            // Show spinner while generating report
+            reportSpinner.style.display = 'inline-block';
+
+            try {
+                const response = await fetch('/generate_report');
+                const result = await response.json();
+                console.log(result); // Log the response to check the content
+                reportContainer.textContent = result.report;
+            } catch (error) {
+                console.error('Error generating report:', error);
+                alert('Error generating report');
+            } finally {
+                generateReportBtn.innerHTML = 'Generate Report';
+                generateReportBtn.disabled = false;
+
+                // Hide spinner after generating report
+                reportSpinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
